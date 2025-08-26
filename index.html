@@ -1,0 +1,256 @@
+<!doctype html>
+<html lang="zh-Hant">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>俄羅斯方塊</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <div id="viewport">
+      <div id="page" role="application" aria-label="Tetris 2560x1440 畫面">
+        <!-- 螢幕報讀區 -->
+        <div id="sr-live" aria-live="polite" aria-atomic="true" class="visually-hidden"></div>
+
+        <!-- 頁首 -->
+        <header class="site-header" role="banner">
+      <div class="container header-inner">
+        <h1 class="site-title">俄羅斯方塊</h1>
+
+        <div class="controls" aria-label="控制按鈕列">
+          <button id="btn-start" class="btn primary">開始</button>
+          <button id="btn-pause" class="btn" aria-pressed="false">暫停</button>
+          <button id="btn-restart" class="btn">重新開始</button>
+          <button id="btn-settings" class="btn" aria-haspopup="dialog">設定</button>
+          <button id="btn-audio" class="btn" aria-pressed="false" aria-label="音效開關">🔊</button>
+        </div>
+
+        <p id="kb-hint" class="kb-hint">
+          鍵盤：← → 移動、↓ 加速、Z/X 旋轉、空白 硬降、C 保留、P 暫停
+        </p>
+        </div>
+        </header>
+
+        <!-- 主內容 -->
+        <main id="main" class="site-main container" role="main">
+      <!-- 左側資訊區 -->
+      <aside id="left-info" class="panel card" aria-label="左側資訊">
+        <section class="scoreboard">
+          <h2 class="card-title">計分卡</h2>
+          <div class="score-grid">
+            <div class="stat">
+              <span class="label">分數</span>
+              <span id="score" class="value" data-bind="score">0</span>
+            </div>
+            <div class="stat">
+              <span class="label">等級</span>
+              <span id="level" class="value" data-bind="level">1</span>
+            </div>
+            <div class="stat">
+              <span class="label">消除行數</span>
+              <span id="lines" class="value" data-bind="lines">0</span>
+            </div>
+            <div class="stat">
+              <span class="label">已用時間</span>
+              <span id="time" class="value" data-bind="time">00:00</span>
+            </div>
+          </div>
+        </section>
+
+        <section class="howto">
+          <h2 class="card-title">操作說明</h2>
+          <ul class="list">
+            <li>左右移動：← →</li>
+            <li>加速下落：↓</li>
+            <li>旋轉：Z（左）、X（右）</li>
+            <li>硬降：空白</li>
+            <li>保留：C</li>
+            <li>暫停：P</li>
+          </ul>
+        </section>
+
+        <section class="mobile-toggle">
+          <button id="btn-toggle-touch" class="btn full">顯示觸控按鍵</button>
+        </section>
+      </aside>
+
+      <!-- 中央遊戲區 -->
+      <section id="game-area" class="game-area card" aria-label="遊戲區">
+        <h2 class="visually-hidden">遊戲畫面</h2>
+        <div class="playfield-wrapper">
+          <div id="playfield" class="playfield" aria-label="主繪圖層" role="img" aria-roledescription="遊戲畫面">
+            <canvas id="layer-main" class="layer" aria-label="主繪圖層"></canvas>
+            <canvas id="layer-ghost" class="layer" aria-label="幽靈提示層"></canvas>
+            <canvas id="layer-grid" class="layer" aria-label="網格線層" hidden></canvas>
+            <div id="fallback-grid" class="fallback-grid" hidden aria-hidden="true"></div>
+          </div>
+        </div>
+
+        <div class="bottom-toolbar" aria-label="底部工具列">
+          <button id="btn-soft-drop" class="btn">軟降</button>
+          <button id="btn-hard-drop" class="btn">硬降</button>
+          <button id="btn-rotate-left" class="btn">向左旋轉</button>
+          <button id="btn-rotate-right" class="btn">向右旋轉</button>
+          <button id="btn-hold" class="btn">保留</button>
+        </div>
+
+        <!-- 行動觸控按鍵區 -->
+        <div id="touch-controls" class="touch-controls" hidden>
+          <div class="touch-row" aria-label="方向區">
+            <button id="touch-left" class="btn touch">←</button>
+            <button id="touch-down" class="btn touch">↓</button>
+            <button id="touch-right" class="btn touch">→</button>
+          </div>
+          <div class="touch-row" aria-label="動作區">
+            <button id="touch-rot-l" class="btn touch">↺</button>
+            <button id="touch-hard" class="btn touch">⤓</button>
+            <button id="touch-rot-r" class="btn touch">↻</button>
+            <button id="touch-hold" class="btn touch">保留</button>
+          </div>
+        </div>
+      </section>
+
+      <!-- 右側面板 -->
+      <aside id="right-panel" class="panel card" aria-label="右側面板">
+        <section class="next-queue">
+          <h2 class="card-title">下一顆佇列</h2>
+          <div id="next-queue" class="mini-grid-list" aria-live="polite"></div>
+        </section>
+
+        <section class="hold-area">
+          <h2 class="card-title">保留</h2>
+          <div id="hold" class="mini-grid" aria-label="保留預覽"></div>
+          <p class="note">按 C 或按鈕保留/交換</p>
+        </section>
+
+        <section class="tips">
+          <h2 class="card-title">提示與成就</h2>
+          <ul id="messages" class="list" aria-live="polite"></ul>
+        </section>
+        </aside>
+        </main>
+
+        <!-- 頁尾 -->
+        <footer class="site-footer" role="contentinfo">
+      <div class="container footer-inner">
+        <div class="version">v0.1.0</div>
+        <div class="links">
+          <a href="https://tetris.com/" target="_blank" rel="noopener noreferrer">來源 / 授權</a>
+        </div>
+        <div class="audio-inline">
+          <label class="switch">
+            <input id="chk-audio" type="checkbox" aria-label="音效控制" />
+            <span>音效</span>
+          </label>
+        </div>
+        </div>
+        </footer>
+
+        <!-- 覆蓋視窗：開始 -->
+        <div id="overlay-start" class="overlay" role="dialog" aria-modal="true" aria-labelledby="start-title" hidden>
+      <div class="dialog card">
+        <h2 id="start-title" class="dialog-title">俄羅斯方塊</h2>
+        <p class="dialog-desc">消除行數、爭取高分！使用鍵盤或觸控按鍵操作。</p>
+        <div class="dialog-actions">
+          <button id="start-play" class="btn primary">開始遊戲</button>
+        </div>
+        <button class="dialog-close btn ghost" data-close>關閉</button>
+      </div>
+        </div>
+
+        <!-- 覆蓋視窗：暫停 -->
+        <div id="overlay-pause" class="overlay" role="dialog" aria-modal="true" aria-labelledby="pause-title" hidden>
+      <div class="dialog card">
+        <h2 id="pause-title" class="dialog-title">已暫停</h2>
+        <div class="dialog-actions">
+          <button id="pause-resume" class="btn primary">繼續</button>
+          <button id="pause-exit" class="btn">返回主畫面</button>
+        </div>
+        <button class="dialog-close btn ghost" data-close>關閉</button>
+      </div>
+        </div>
+
+        <!-- 覆蓋視窗：結束 -->
+        <div id="overlay-gameover" class="overlay" role="dialog" aria-modal="true" aria-labelledby="over-title" hidden>
+      <div class="dialog card">
+        <h2 id="over-title" class="dialog-title">遊戲結束</h2>
+        <p class="dialog-desc">
+          最終成績：<span id="final-score">0</span> 分，等級 <span id="final-level">1</span>，消除 <span id="final-lines">0</span> 行
+        </p>
+        <div class="dialog-actions">
+          <button id="over-restart" class="btn primary">重新開始</button>
+          <button id="over-share" class="btn">分享</button>
+        </div>
+        <button class="dialog-close btn ghost" data-close>關閉</button>
+      </div>
+        </div>
+
+        <!-- 設定視窗 -->
+        <div id="overlay-settings" class="overlay" role="dialog" aria-modal="true" aria-labelledby="settings-title" hidden>
+      <div class="dialog card" role="document">
+        <h2 id="settings-title" class="dialog-title">設定</h2>
+        <form id="form-settings" class="settings-form" autocomplete="off">
+          <fieldset>
+            <legend>音量調整</legend>
+            <label>
+              背景音樂
+              <input id="vol-bgm" type="range" min="0" max="1" step="0.01" value="0.4" />
+            </label>
+            <label>
+              音效
+              <input id="vol-sfx" type="range" min="0" max="1" step="0.01" value="0.7" />
+            </label>
+          </fieldset>
+
+          <fieldset>
+            <legend>顯示</legend>
+            <label class="switch">
+              <input id="opt-cvd" type="checkbox" />
+              <span>色弱友善模式</span>
+            </label>
+            <label class="switch">
+              <input id="opt-grid" type="checkbox" />
+              <span>顯示網格線</span>
+            </label>
+          </fieldset>
+
+          <fieldset>
+            <legend>鍵位自訂</legend>
+            <div class="keymap">
+              <label>左<input id="key-left" type="text" value="ArrowLeft" readonly /></label>
+              <label>右<input id="key-right" type="text" value="ArrowRight" readonly /></label>
+              <label>下<input id="key-down" type="text" value="ArrowDown" readonly /></label>
+              <label>旋左<input id="key-rot-l" type="text" value="KeyZ" readonly /></label>
+              <label>旋右<input id="key-rot-r" type="text" value="KeyX" readonly /></label>
+              <label>硬降<input id="key-hard" type="text" value="Space" readonly /></label>
+              <label>保留<input id="key-hold" type="text" value="KeyC" readonly /></label>
+              <label>暫停<input id="key-pause" type="text" value="KeyP" readonly /></label>
+            </div>
+            <div class="keymap-actions">
+              <button id="btn-edit-keys" class="btn">編輯</button>
+              <button id="btn-reset-keys" class="btn ghost" type="button">重設</button>
+            </div>
+          </fieldset>
+
+          <div class="dialog-actions">
+            <button id="btn-save-settings" class="btn primary">儲存</button>
+            <button class="btn" type="button" data-close>關閉</button>
+          </div>
+        </form>
+        </div>
+      </div>
+    </div>
+
+    <!-- 音效區 -->
+    <audio id="bgm" loop preload="auto" src="assets/bgm.mp3"></audio>
+    <audio id="sfx-rotate" preload="auto" src="assets/rotate.mp3"></audio>
+    <audio id="sfx-lock" preload="auto" src="assets/lock.mp3"></audio>
+    <audio id="sfx-clear" preload="auto" src="assets/clear.mp3"></audio>
+    <audio id="sfx-hard" preload="auto" src="assets/hard.mp3"></audio>
+
+    <script defer src="app.js"></script>
+  </body>
+  </html>
+
+
+
